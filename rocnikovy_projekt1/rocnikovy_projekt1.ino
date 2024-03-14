@@ -1,4 +1,4 @@
- #include <SPI.h>
+#include <SPI.h>
 #include <Adafruit_GFX.h>
 #include <Max72xxPanel.h>
 
@@ -21,17 +21,18 @@ int numberOfVerticalDisplays = 4;
 
 Max72xxPanel matrix = Max72xxPanel(pinCS, numberOfHorizontalDisplays, numberOfVerticalDisplays);
 
-String tape = "Meric Rychlosti";
+String tape = "Meric Rychlosti pohybu";
 
 int wait = 50;
 int spacer = 1;
 int width = 5 + spacer;
 
-double draha = 0.06; // m
+double draha = 1; // m
 double cas = 0; 
 double casZacatek = 0;
 double casKonec = 0;
 double rychlost; // m/s
+double MAX_rychlost = 0;
 
 bool preruseni1 = false;
 
@@ -59,12 +60,12 @@ void setup() {
   
   // nastavení přerušení na pin Out
   attachInterrupt(digitalPinToInterrupt(pinOut1), preruseniLaseru1, RISING);
-  attachInterrupt(digitalPinToInterrupt(pinOut2), preruseniLaseru2, RISING); // někde bude chyba (podpora pinů přerušení, pouze pin 2 a 3)
+  attachInterrupt(digitalPinToInterrupt(pinOut2), preruseniLaseru2, RISING); 
 
   matrix.setIntensity(15);
   matrix.setRotation(3);
 
-  /*for (int i = 0; i < width * tape.length() + matrix.width() - 1 - spacer; i++) {
+  for (int i = 0; i < width * tape.length() + matrix.width() - 1 - spacer; i++) {
     matrix.fillScreen(LOW);
     int letter = i / width;
     int x = (matrix.width() - 1) - i % width;
@@ -78,7 +79,7 @@ void setup() {
     }
     matrix.write();
     delay(wait);
-  }*/
+  }
 }
  bool zmereno = false;
 void loop() {
@@ -97,24 +98,6 @@ void loop() {
   }
 
   zmereno = false;
- /*if(stav1 == LOW && stav2 == LOW)
-   {
-      matrix.fillScreen(LOW);
-      char cislo = '0';
-      int x = 1;//(matrix.width() - 1) - i % width;
-      int y = (matrix.height() - 8) / 2;
-      matrix.drawChar(x, y, cislo, HIGH, LOW, 1);
-      matrix.write();       
-   }
-   else if(stav1 == HIGH || stav2 == HIGH)                //testování laserových snímačů
-   {
-      matrix.fillScreen(LOW);
-      char cislo = '1';
-      int x = 1;//(matrix.width() - 1) - i % width;
-      int y = (matrix.height() - 8) / 2;
-      matrix.drawChar(x, y, cislo, HIGH, LOW, 1);
-      matrix.write();
-   }*/
 
   String cislo = String(rychlost, 1); // Zaokrouhlení rychlosti na jedno desetinné místo
   matrix.fillScreen(LOW);
@@ -142,7 +125,7 @@ void preruseniLaseru1() {
   }
 }
 
-void preruseniLaseru2() {                                     //zkontrolovat měření času
+void preruseniLaseru2() {                                     
   Serial.println("Preruseni laseru 2");
   if(preruseni1 == true)
   {
@@ -154,8 +137,14 @@ void preruseniLaseru2() {                                     //zkontrolovat mě
     if(cas > 0)
     {
        rychlost = draha / cas;
+       if(rychlost > MAX_rychlost)
+       {
+        MAX_rychlost = rychlost;
+       }
     }
     Serial.print("výsledek: ");
     Serial.println(rychlost);
+    Serial.print("MAX rychlost");
+    Serial.println(MAX_rychlost);
   }
 }
